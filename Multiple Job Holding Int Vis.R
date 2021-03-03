@@ -60,15 +60,40 @@ ui <- fluidPage(
               list("Yearly Totals", "2014 Demographics", "2015 Demographics", "2016 Demographics",
                    "2017 Demographics", "2018 Demographics", "2019 Demographics")),
   
-  plotOutput("bar", click = "plot_click"),
+  plotOutput("plot", click = "plot_click"),
   
   verbatimTextOutput("text")
   
 )
 
 server <- function(input, output) {
+  data <- reactive({
+    if ("2014" %in% input$year) return (temp)
+    if ("2015" %in% input$year) return (temp)
+    if ("2016" %in% input$year) return (temp)
+    if ("2017" %in% input$year) return (temp)
+    if ("2018" %in% input$year) return (temp)
+    if ("2019" %in% input$year) return (temp)
+    if ("Yearly Totals" %in% input$year) return (temp)
+  })
+  
+  output$plot <- renderPlot({
+    if ("Yearly Totals" %in% input$year) {
+      # line graph of annual trends
+      
+    } else {
+      # bar graph comparing demographic participation in mjh
+    }
+    
+  })
+  
+  output$text <- renderText({
+    paste0()
+  })
 
 }
+
+shinyApp(ui = ui, server = server)
 
 
 
