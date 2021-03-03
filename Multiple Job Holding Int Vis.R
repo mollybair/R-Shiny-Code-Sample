@@ -29,6 +29,7 @@ char_rename <- c("16+", "16-19", "20+", "20-24", "25+", "25-54", "55+", "55-64",
                      "both part time", "both full time", "hrs vary")
                   # there are inconsistencies in variable naming across waves of data, which presents
                   # an error when joining waves on characteristic
+
 # clean data
 clean_df<- function(df, vars, df_name) {
   cleaned <- df %>%
@@ -51,12 +52,22 @@ for (i in range(2:length(dfs))) {
                        by = c("characteristic" = "characteristic"))  # merge all waves by characteristic
 }
 
+# create shiny app
 ui <- fluidPage(
+  titlePanel("Multiple Job Holding Trends"),
+  
+  selectInput("year", "Select a dataset to view",
+              list("Yearly Totals", "2014 Demographics", "2015 Demographics", "2016 Demographics",
+                   "2017 Demographics", "2018 Demographics", "2019 Demographics")),
+  
+  plotOutput("bar", click = "plot_click"),
+  
+  verbatimTextOutput("text")
   
 )
 
 server <- function(input, output) {
-  
+
 }
 
 
