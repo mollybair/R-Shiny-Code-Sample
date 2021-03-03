@@ -45,11 +45,30 @@ for (i in 1:length(data_files)) {
   df_name <- substr(data_files[i], 1, 8) # use fname for df_name, but exclude .xlsx
   temp_cleaned <- clean_df(temp, unlist(numeric_cols[i]), df_name) # clean data 
 }
+
+# merge data for annual comparisons
 dfs <- list(`mjh14-15`, `mjh16-17`, `mjh18-19`)
 merged <- as.data.frame(dfs[1])
 for (i in range(2:length(dfs))) {
   merged <- inner_join(merged, as.data.frame(dfs[i]), 
                        by = c("characteristic" = "characteristic"))  # merge all waves by characteristic
+}
+
+# separate data by year
+years <- c("14", "15", "16", "17", "18", "19")
+year_dfs <- c("mjh14", "mjh15", "mjh16", "mjh17", "mjh18", "mjh19")
+for (i in seq_along(years)) {
+  df_copy <- cbind(merged)
+  col_names <- colnames(df_copy)[2:length(colnames(df_copy))]
+  keep <- c()
+  for (col_name in col_names) {
+    if (grepl(years[i], col_name) == TRUE) {
+      keep <- c(keep, col_name)
+    }
+  }
+  keep <- c("characteristic", keep)
+  data <- df_copy[keep]
+  assign(year_dfs[i], data, envir = globalenv())
 }
 
 # create shiny app
