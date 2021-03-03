@@ -76,49 +76,47 @@ for (i in seq_along(years)) {
   colnames(data) <- clean_colnames
   assign(year_dfs[i], data, envir = globalenv())
 }
-view(mjh14)
-ggplot(mjh14) +
-  geom_col(aes(total_rate, characteristic))
 
 # create shiny app
 ui <- fluidPage(
-  titlePanel("Multiple Job Holding Trends"),
+  fluidRow(
+    column(width = 12,
+           align = "center",
+           tags$h1("Multiple Job Holding Trends, 2014-2019"))
+  ),
   
   selectInput("year", "Select a dataset to view",
               list("Yearly Totals", "2014 Demographics", "2015 Demographics", "2016 Demographics",
                    "2017 Demographics", "2018 Demographics", "2019 Demographics")),
   
-  plotOutput("plot", click = "plot_click"),
-  
-  verbatimTextOutput("text")
+  plotOutput("plot")
   
 )
 
 server <- function(input, output) {
-  data <- reactive({
-    if ("Yearly Totals" %in% input$year) return (merged)
-    if ("2014" %in% input$year) return (mjh14)
-    if ("2015" %in% input$year) return (mjh15)
-    if ("2016" %in% input$year) return (mjh16)
-    if ("2017" %in% input$year) return (mjh17)
-    if ("2018" %in% input$year) return (mjh18)
-    if ("2019" %in% input$year) return (mjh19)
+  my_data <- reactive({
+    if (input$year == "Yearly Totals") return (merged)
+    if (input$year == "2014 Demographics") return (mjh14)
+    if (input$year == "2015 Demographics") return (mjh15)
+    if (input$year == "2016 Demographics") return (mjh16)
+    if (input$year == "2017 Demographics") return (mjh17)
+    if (input$year == "2018 Demographics") return (mjh18)
+    if (input$year == "2019 Demographics") return (mjh19)
   })
   
   output$plot <- renderPlot({
     if ("Yearly Totals" %in% input$year) {
-      # line graph of annual trends
+ 
       
     } else {
-      # bar graph comparing demographic participation in mjh
-      ggplot(data) +
-        geom_bar(aes(total_rate))
+      ggplot(data = my_data()) +
+        geom_col(mapping = aes(x = total_rate, y = characteristic)) + 
+        labs(x = "Percentage of Employed Persons in Group with Multiple Jobs", 
+             y = "",
+             caption = "Source: U.S. Bureau of Labor Statistics") +
+        theme_minimal()
     }
     
-  })
-  
-  output$text <- renderText({
-    paste0()
   })
 
 }
