@@ -119,8 +119,6 @@ sign_formatter <- formatter("span", style = x ~ style(color = ifelse(x > 0, "gre
                                                                      ifelse(x < 0, "red", "black"))))
 trend_table <- formattable(trends,
                            list('Change in Participation Rate (since previous year)' = sign_formatter))
-                                                      
-trend_table                                                    
 
 # create shiny app
 ui <- fluidPage(
@@ -130,33 +128,19 @@ ui <- fluidPage(
            tags$h1("Characteristics of Multiple Jobholders, 2014-2019"))
   ),
   
-  fluidRow(
-    column(width = 5,
-           align = "left",
-           div(style = "font-size:35px;"),
-           "\nData on multiple jobholders comes from the Current Population Survey 
-               conducted by the United States Bureau of Labor Statistics.\n"
-    )
-  ),
-  
   sidebarLayout(
     sidebarPanel(
       selectInput("year", "Select a year",
                   list("2014", "2015", "2016", "2017", "2018", "2019")),
       width = 3,
-      "\nAn individual is classified as a multiple jobholder if they held more than one job
-           at the time of the survey. Multiple jobholders do not include individuals who perform
-           unpaid family work as their primary job or who are self-employed as their primary job.
-           Individuals who perform unpaid family work or are self-employed as their secondary job
-           are also excluded from the multiple jobholding classification. \n"
       ),
+    
     mainPanel(
       plotOutput("plot"),
       formattableOutput("table")
     ),
     position = "right"
   )
-  
 )
 
 server <- function(input, output) {
@@ -172,7 +156,7 @@ server <- function(input, output) {
   output$plot <- renderPlot({
     ggplot(data = my_data()) +
       geom_col(mapping = aes(x = total_rate, y = characteristic, fill = char_cat)) +
-      scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
+      scale_fill_manual(values=c("#8A1800", "#0E449C", "#225B09")) +
       labs(x = "Percentage of Employed Persons in Group with Multiple Jobs",
            y = "",
            caption = "Source: U.S. Bureau of Labor Statistics") +
