@@ -4,17 +4,18 @@ library(readxl)
 library(tidyverse)
 library(dplyr)
 library(shiny)
+library(forcats)
 path <- "./R-Shiny-Code-Sample/Multiple Job Holding Data/"
 
 # load data
 data_files <- list.files(path)
-#data_files <- data_files[2:length(data_files)] #BANDAID FIX COME BACK TO THIS!!!
 excel_to_df <- function(fname, col_names) {
   df <- read_excel(paste0(path, fname),
                    range = cell_rows(8:28), # exclude multi-index and footer, and last group of characteristics
                                             # (hours worked) because rates are missing
                    col_names = col_names)
 }
+
 names_1415 <- c("characteristic", "total_count_14", "total_count_15", "total_rate_14", "total_rate_15",
                 "men_count_14", "men_count_15", "men_rate_14", "men_rate_15","wom_count_14", 
                 "wom_count_15", "wom_rate_14", "wom_rate_15")
@@ -25,6 +26,7 @@ names_1819 <- c("characteristic", "total_count_18", "total_count_19", "total_rat
                 "men_count_18", "men_count_19", "men_rate_18", "men_rate_19","wom_count_18", 
                 "wom_count_19", "wom_rate_18", "wom_rate_19")
 all_col_names <- c(list(names_1415), list(names_1617), list(names_1819))
+
 char_rename <- c("16-19 years", "20-24 years", "25-54 years", "55-64 years", "65+",
                  "White", "Black or African American", "Asian", "Hispanic or Latino ethnicity", 
                  "Married", "Widowed, Divorced, or Separated", "Never Married")
@@ -40,6 +42,7 @@ clean_df<- function(df, vars, drop_vals, df_name) {
   cleaned$characteristic <- char_rename
   assign(df_name, cleaned, envir = globalenv())
 }
+
 numeric_cols <- c(list(names_1415[2:13]), list(names_1617[2:13]), list(names_1819[2:13]))
     # all cols except first contain numeric data 
 for (i in 1:length(data_files)) {
@@ -58,11 +61,20 @@ for (i in range(2:length(dfs))) {
                        by = c("characteristic" = "characteristic"))  # merge all waves by characteristic
 }
 
+# add column that indicates type of characteristic (age, race, etc.)
+# add levels to characteristic col so that bars in bar chart will be in correct order
+merged$char_cat <- c("Age Group", "Age Group", "Age Group", "Age Group", "Age Group", "Race/Ethnicity",
+                     "Race/Ethnicity", "Race/Ethnicity", "Race/Ethnicity", "Marital Status",
+                     "Marital Status", "Marital Status")
+char_levels <- char_rename
+merged$characteristic <- factor(char_levels, levels = char_levels)
+
 # separate data by year
 years <- c("14", "15", "16", "17", "18", "19")
 year_dfs <- c("mjh14", "mjh15", "mjh16", "mjh17", "mjh18", "mjh19")
-clean_colnames <- c("characteristic", "total_count", "total_rate", "men_count", "men_rate",
+clean_colnames <- c("characteristic", "char_cat", "total_count", "total_rate", "men_count", "men_rate",
                     "wom_count", "wom_rate")
+
 for (i in seq_along(years)) {
   col_names <- colnames(merged)[2:length(colnames(merged))]
   keep <- c()
@@ -71,7 +83,7 @@ for (i in seq_along(years)) {
       keep <- c(keep, col_name)
     }
   }
-  keep <- c("characteristic", keep)
+  keep <- c("characteristic", "char_cat", keep)
   data <- merged[keep]
   colnames(data) <- clean_colnames
   assign(year_dfs[i], data, envir = globalenv())
@@ -81,13 +93,20 @@ for (i in seq_along(years)) {
 ui <- fluidPage(
   fluidRow(
     column(width = 12,
-           align = "center",
-           tags$h1("Multiple Job Holding Trends, 2014-2019"))
+           align = "left",
+           tags$h1("Characteristics of Multiple Jobholders, 2014-2019"))
   ),
   
-  selectInput("year", "Select a dataset to view",
-              list("Yearly Totals", "2014 Demographics", "2015 Demographics", "2016 Demographics",
-                   "2017 Demographics", "2018 Demographics", "2019 Demographics")),
+  fluidRow(
+    column(width = 3,
+           align = "right",
+           tags$h2("Data on multiple jobholders comes from the Current Population Survey conducted by the United States Bureau of Labor Statistics."))
+  ),
+  
+  selectInput("year", "Select a year",
+              list("2014", "2015", "2016", "2017", "2018", "2019")
+    
+  ),
   
   plotOutput("plot")
   
@@ -95,36 +114,25 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   my_data <- reactive({
-    if (input$year == "Yearly Totals") return (merged)
-    if (input$year == "2014 Demographics") return (mjh14)
-    if (input$year == "2015 Demographics") return (mjh15)
-    if (input$year == "2016 Demographics") return (mjh16)
-    if (input$year == "2017 Demographics") return (mjh17)
-    if (input$year == "2018 Demographics") return (mjh18)
-    if (input$year == "2019 Demographics") return (mjh19)
+    if (input$year == "2014") return (mjh14)
+    if (input$year == "2015") return (mjh15)
+    if (input$year == "2016") return (mjh16)
+    if (input$year == "2017") return (mjh17)
+    if (input$year == "2018") return (mjh18)
+    if (input$year == "2019") return (mjh19)
   })
   
   output$plot <- renderPlot({
-    if ("Yearly Totals" %in% input$year) {
- 
-      
-    } else {
-      ggplot(data = my_data()) +
-        geom_col(mapping = aes(x = total_rate, y = characteristic)) + 
-        labs(x = "Percentage of Employed Persons in Group with Multiple Jobs", 
-             y = "",
-             caption = "Source: U.S. Bureau of Labor Statistics") +
-        theme_minimal()
-    }
-    
+    ggplot(data = my_data()) +
+      geom_col(mapping = aes(x = total_rate, y = characteristic, fill = char_cat)) +
+      scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
+      labs(x = "Percentage of Employed Persons in Group with Multiple Jobs",
+           y = "",
+           caption = "Source: U.S. Bureau of Labor Statistics") +
+      theme_minimal()
   })
 
 }
 
 shinyApp(ui = ui, server = server)
-
-
-
-
-
 
