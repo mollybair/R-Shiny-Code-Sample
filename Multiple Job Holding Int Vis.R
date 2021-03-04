@@ -93,22 +93,40 @@ for (i in seq_along(years)) {
 ui <- fluidPage(
   fluidRow(
     column(width = 12,
-           align = "left",
+           align = "center",
            tags$h1("Characteristics of Multiple Jobholders, 2014-2019"))
   ),
   
   fluidRow(
-    column(width = 3,
-           align = "right",
-           tags$h2("Data on multiple jobholders comes from the Current Population Survey conducted by the United States Bureau of Labor Statistics."))
+    column(width = 5,
+           align = "left",
+           div(style = "font-size:35px;"),
+           "\nData on multiple jobholders comes from the Current Population Survey 
+               conducted by the United States Bureau of Labor Statistics.\n"
+    )
   ),
   
-  selectInput("year", "Select a year",
-              list("2014", "2015", "2016", "2017", "2018", "2019")
-    
+  fluidRow(
+    column(width = 5,
+           div(style ="font-size:35px;"),
+           "\nAn individual is classified as a multiple jobholder if they held more than one job
+           at the time of the survey. Multiple jobholders do not include individuals who perform
+           unpaid family work as their primary job or who are self-employed as their primary job.
+           Individuals who perform unpaid family work or are self-employed as their secondary job
+           are also excluded from the multiple jobholding classification. \n")
   ),
   
-  plotOutput("plot")
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("year", "Select a year",
+                  list("2014", "2015", "2016", "2017", "2018", "2019")),
+      width = 3
+      ),
+    mainPanel(
+      plotOutput("plot")
+    ),
+    position = "right"
+  )
   
 )
 
