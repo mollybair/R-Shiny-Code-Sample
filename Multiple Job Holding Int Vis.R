@@ -5,6 +5,7 @@ library(tidyverse)
 library(dplyr)
 library(shiny)
 library(forcats)
+library(formattable)
 path <- "./R-Shiny-Code-Sample/Multiple Job Holding Data/"
 
 # load data
@@ -71,7 +72,7 @@ merged$characteristic <- factor(char_levels, levels = char_levels)
 
 # separate data by year
 years <- c("14", "15", "16", "17", "18", "19")
-year_dfs <- c("mjh14", "mjh15", "mjh16", "mjh17", "mjh18", "mjh19")
+year_df_names <- c("mjh14", "mjh15", "mjh16", "mjh17", "mjh18", "mjh19")
 clean_colnames <- c("characteristic", "char_cat", "total_count", "total_rate", "men_count", "men_rate",
                     "wom_count", "wom_rate")
 
@@ -86,8 +87,40 @@ for (i in seq_along(years)) {
   keep <- c("characteristic", "char_cat", keep)
   data <- merged[keep]
   colnames(data) <- clean_colnames
-  assign(year_dfs[i], data, envir = globalenv())
+  assign(year_df_names[i], data, envir = globalenv())
 }
+
+# create new df that compares total rate to previous year
+years <- c("2014", "2015", "2016", "2017", "2018", "2019")
+total_rates <- c()
+year_dfs <- list(mjh14, mjh15, mjh16, mjh17, mjh18, mjh19)
+
+for (df in year_dfs) {
+  df <- df[df[["char_cat"]] == "Age Group"]
+  av_total_rate <- round(mean(df$total_rate), 2)
+  total_rates <- c(total_rates, av_total_rate)
+}
+
+deltas <- c()
+for (i in seq_along(total_rates)) {
+  if (i > 1) {
+    delta <- round(total_rates[i] - total_rates[i-1], 3)
+    format_delta <- paste(toString(delta), '%', sep = '')
+    deltas <- c(deltas, format_delta)
+  } else {
+    deltas <- c(deltas, NA)
+  }
+}
+trends <- tibble(Year = years, 'Total Multiple Jobholding Participation Rate' = total_rates, 
+                 'Change in Participation Rate (since previous year)' = deltas)
+
+# create static table to output in shiny app
+sign_formatter <- formatter("span", style = x ~ style(color = ifelse(x > 0, "green",
+                                                                     ifelse(x < 0, "red", "black"))))
+trend_table <- formattable(trends,
+                           list('Change in Participation Rate (since previous year)' = sign_formatter))
+                                                      
+trend_table                                                    
 
 # create shiny app
 ui <- fluidPage(
@@ -106,24 +139,20 @@ ui <- fluidPage(
     )
   ),
   
-  fluidRow(
-    column(width = 5,
-           div(style ="font-size:35px;"),
-           "\nAn individual is classified as a multiple jobholder if they held more than one job
-           at the time of the survey. Multiple jobholders do not include individuals who perform
-           unpaid family work as their primary job or who are self-employed as their primary job.
-           Individuals who perform unpaid family work or are self-employed as their secondary job
-           are also excluded from the multiple jobholding classification. \n")
-  ),
-  
   sidebarLayout(
     sidebarPanel(
       selectInput("year", "Select a year",
                   list("2014", "2015", "2016", "2017", "2018", "2019")),
-      width = 3
+      width = 3,
+      "\nAn individual is classified as a multiple jobholder if they held more than one job
+           at the time of the survey. Multiple jobholders do not include individuals who perform
+           unpaid family work as their primary job or who are self-employed as their primary job.
+           Individuals who perform unpaid family work or are self-employed as their secondary job
+           are also excluded from the multiple jobholding classification. \n"
       ),
     mainPanel(
-      plotOutput("plot")
+      plotOutput("plot"),
+      formattableOutput("table")
     ),
     position = "right"
   )
@@ -149,7 +178,11 @@ server <- function(input, output) {
            caption = "Source: U.S. Bureau of Labor Statistics") +
       theme_minimal()
   })
-
+  
+  output$table <- renderFormattable({
+    trend_table
+  })
+  
 }
 
 shinyApp(ui = ui, server = server)
